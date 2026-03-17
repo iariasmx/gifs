@@ -10,6 +10,9 @@ export const routes: Routes = [
       {path: 'trending',
         loadComponent: () => import('./gifs/pages/trnding-page/trnding-page').then(m => m.TrndingPage)
       },
+      {path: 'history/:query',
+        loadComponent: () => import('./gifs/pages/gif-history/gif-history').then(m => m.GifHistory)
+      },
       {path: '**', redirectTo: 'trending' }
     ]
   },

@@ -1,0 +1,5 @@
+<h1>Gif History for {{ query() }}</h1>
+
+<section class="py-4">
+    <gif-list [gifs]="gifsByQuery()" [loading]="gifsService.GifsLoading()" />
+</section>
