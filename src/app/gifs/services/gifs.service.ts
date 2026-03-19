@@ -4,20 +4,30 @@ import { environment } from '@environments/environment';
 import { GiphyResponse } from '../interfaces/giphy.interfaces';
 import { GifMapper } from '../mapper/gif.mapper';
 import { Gif } from '../interfaces/gif.interface';
-import { map, tap } from 'rxjs';
+import { map, of, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GifService {
-  
+
   private httpClient = inject(HttpClient);
   trendingGifs = signal<Gif[]>([]);
-  GifsLoading = signal<boolean>(true);
+  GifsLoading = signal<boolean>(false);
+  private currentPage = signal<number>(0);
+
+  trendingGifGroup = computed<Gif[][]>(() => {
+    const groups = [];
+    for (let i = 0; i < this.trendingGifs().length; i += 3) {
+      groups.push(this.trendingGifs().slice(i, i + 3));
+    }
+
+    return groups;
+  });
 
   searchHistory = signal<Record<string, Gif[]>>({});
   searchHistoryKeys = computed(() => Object.keys(this.searchHistory()));
-  
+
   constructor() { this.loadTrendingGifs(); this.loadSearchHistory(); }
 
   loadSearchHistory() {
@@ -27,19 +37,25 @@ export class GifService {
     }
   }
 
-  
+
 
   loadTrendingGifs() {
+
+    if (this.GifsLoading()) return;
+    this.GifsLoading.set(true);
+
     return this.httpClient.get<GiphyResponse>(`${environment.apiUrl}/trending`, {
       params: {
         api_key: environment.apiKey,
         limit: '20',
+        offset: (this.currentPage() * 20).toString(),
       },
     }).subscribe((response) => {
       const gifs = GifMapper.toGifList(response.data);
-      this.trendingGifs.set(gifs);
+      this.trendingGifs.update((prevGifs) => [...prevGifs, ...gifs]);
       this.GifsLoading.set(false);
-      console.log({gifs});
+      this.currentPage.update((page) => page + 1);
+
     });
   }
 
